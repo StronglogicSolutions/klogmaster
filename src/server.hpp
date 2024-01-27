@@ -5,15 +5,20 @@
 #include <logger.hpp>
 
 using namespace kiq::log;
-
+//------------------------------------------------
 static std::map<std::string, std::string> g_paths{
   {"log", R"(/log/(\d+)/([a-zA-Z0-9._]+))"}
 };
 //------------------------------------------------
-// template <typename T = std::string>
 std::string to_file_path(const std::string& build_id, const std::string& name)
 {
   return build_id + std::string{"/"} + name;
+}
+//------------------------------------------------
+std::string to_json_response(const std::string& id, const std::string& name)
+{
+  return R"({"status": "success", "build_id": ")" + id +
+         R"(", "filename": ")"                    + name + R"("})";
 }
 //------------------------------------------------
 
@@ -35,19 +40,22 @@ class server
  private:
   void handle_log(const httplib::Request& req, httplib::Response& res)
   {
-    const auto build_id = req.matches[1];
-    const auto filename = req.matches[2];
-    const auto data     = req.body;
+    const std::string build_id = req.matches[1];
+    const std::string filename = req.matches[2];
+    const auto        data     = req.body;
+
+    klog().d("POST request to create log resource for build {} with filename {}", build_id, filename);
+
     if (!data.empty() && kutils::create_dir(build_id))
     {
       kutils::SaveToFile(data, to_file_path(build_id, filename));
       res.status = 200;
-      res.set_content("Log received and stored.", "text/plain");
+      res.set_content(to_json_response(build_id, filename), "application/json");
     }
     else
     {
       res.status = 400;
-      res.set_content("Bad Request: data missing.", "text/plain");
+      res.set_content(R"({"httpcode": 400, "error": "Bad request: data missing"})", "application/json");
     }
   }
   //-------------------------------------------------------------------
