@@ -15,6 +15,11 @@ std::string to_file_path(const std::string& build_id, const std::string& name)
   return build_id + std::string{"/"} + name;
 }
 //------------------------------------------------
+std::string to_dir_name(const std::string& id)
+{
+  return std::string{"logs/"} + id;
+}
+//------------------------------------------------
 std::string to_json_response(const std::string& id, const std::string& name)
 {
   return R"({"status": "success", "build_id": ")" + id +
@@ -43,12 +48,13 @@ class server
     const std::string build_id = req.matches[1];
     const std::string filename = req.matches[2];
     const auto        data     = req.body;
+    const std::string dir_name = to_dir_name(build_id);
 
     klog().d("POST request to create log resource for build {} with filename {}", build_id, filename);
 
-    if (!data.empty() && kutils::create_dir(build_id))
+    if (!data.empty() && kutils::create_dir(dir_name))
     {
-      kutils::SaveToFile(data, to_file_path(build_id, filename));
+      kutils::SaveToFile(data, to_file_path(dir_name, filename));
       res.status = 200;
       res.set_content(to_json_response(build_id, filename), "application/json");
     }
