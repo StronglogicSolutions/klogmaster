@@ -74,7 +74,6 @@ class server
   void handle_view(const httplib::Request& req, httplib::Response& res)
   {
     namespace fs = std::filesystem;
-
     try
     {
       std::string build_id     = req.matches[1];
@@ -89,32 +88,28 @@ class server
 
       klog().d("{} logs discovered", logs.size());
 
-      std::ostringstream html;
+      std::ostringstream content;
       for (const auto& log : logs)
-      {
-        klog().i("Iterating {}", log);
-        const std::string content = kutils::ReadFile(log);
-        html << "<div><h3>" << log << "</h3>" << "<a href=\"/"
-             << log << "\">Download</a><pre>" << content << "</pre></div>";
-      }
+        content << "<div><h3>" << log << "</h3>" << "<a href=\"/"
+                << log << "\">Download</a><pre>" << kutils::ReadFile(log) << "</pre></div>";
 
-      std::ostringstream responseHtml;
-      responseHtml << "<!DOCTYPE html>"
-                    << "<html>"
-                    << "<head>"
-                    << "<title>Build " << build_id << "</title>"
-                    << "<style>"
-                    << "body { background-color: #1e1e1e; color: #ffffff; }"
-                    << ".log-entry { background-color: #2e2e2e; margin: 10px; padding: 10px; border-radius: 5px; }"
-                    << "</style>"
-                    << "</head>"
-                    << "<body>"
-                    << "<h1 style=\"color: #61dafb;\">Logs for build " << build_id << "</h1>"
-                    << html.str()
-                    << "</body>"
-                    << "</html>";
+      std::ostringstream html;
+      html << "<!DOCTYPE html>"
+           << "<html>"
+           << "<head>"
+           << "<title>Build " << build_id << "</title>"
+           << "<style>"
+           << "body { background-color: #1e1e1e; color: #ffffff; }"
+           << ".log-entry { background-color: #2e2e2e; margin: 10px; padding: 10px; border-radius: 5px; }"
+           << "</style>"
+           << "</head>"
+           << "<body>"
+           << "<h1 style=\"color: #61dafb;\">Logs for build " << build_id << "</h1>"
+           << content.str()
+           << "</body>"
+           << "</html>";
 
-      res.set_content(responseHtml.str(), "text/html");
+      res.set_content(html.str(), "text/html");
     }
     catch (const std::exception& e)
     {
