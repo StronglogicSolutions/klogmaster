@@ -1,0 +1,12 @@
+/* style.css */
+body {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.log-entry {
+  background-color: #2e2e2e;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 5px;
+}
