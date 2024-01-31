@@ -8,8 +8,8 @@ using namespace kiq::log;
 
 //------------------------------------------------
 static std::map<std::string, std::string> g_paths{
-  {"log", R"(/log/(\d+)/([a-zA-Z0-9._]+))"},
-  {"view", R"(/view/(\d+))"}
+  {"log", R"(/log/(\w+)/([a-zA-Z0-9._]+))"},
+  {"view", R"(/view/(\w+))"}
 };
 //------------------------------------------------
 static const char* g_log_ext = ".log";
@@ -38,8 +38,8 @@ class server
   : port_(port)
   {
     svr_.set_mount_point("/logs", "logs");
-    svr_.Post(g_paths.at("log"), [this](const auto& req, auto& res) { handle_log(req, res); });
-    svr_.Get(g_paths.at("view"), [&](const auto& req, auto& res) { handle_view(req, res); });
+    svr_.Post(g_paths.at("log") , [this](const auto& req, auto& res) { handle_log (req, res); });
+    svr_.Get (g_paths.at("view"), [this](const auto& req, auto& res) { handle_view(req, res); });
   }
   //----------------------------
   void run()
