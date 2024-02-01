@@ -8,7 +8,7 @@ using namespace kiq::log;
 
 //------------------------------------------------
 static std::map<std::string, std::string> g_paths{
-  {"log", R"(/log/(\w+)/([a-zA-Z0-9._]+))"},
+  {"log", R"(/log/(\w+)/([a-zA-Z0-9._-]+))"},
   {"view", R"(/view/(\w+))"}
 };
 //------------------------------------------------
@@ -61,14 +61,14 @@ class server
     if (!data.empty() && kutils::create_dir(dir_name))
     {
       kutils::SaveToFile(data, to_file_path(dir_name, filename));
+      klog().t("File saved");
       res.status = 200;
       res.set_content(to_json_response(build_id, filename), "application/json");
+      return;
     }
-    else
-    {
-      res.status = 400;
-      res.set_content(R"({"httpcode": 400, "error": "Bad request: data missing"})", "application/json");
-    }
+
+    res.status = 400;
+    res.set_content(R"({"httpcode": 400, "error": "Bad request: data missing"})", "application/json");
   }
   //-------------------------------------------------------------------
   void handle_view(const httplib::Request& req, httplib::Response& res)
