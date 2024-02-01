@@ -40,14 +40,11 @@ class server
     svr_.set_mount_point("/logs", "logs");
     svr_.Post(g_paths.at("log") , [this](const auto& req, auto& res) { handle_log (req, res); });
     svr_.Get (g_paths.at("view"), [this](const auto& req, auto& res) { handle_view(req, res); });
-  }
-  //----------------------------
-  void run()
-  {
+
     klog().i("Listening on port {}", port_);
     svr_.listen("localhost", port_);
   }
-
+//----------------------------
  private:
   void handle_log(const httplib::Request& req, httplib::Response& res)
   {
@@ -58,17 +55,33 @@ class server
 
     klog().d("POST request to create log resource for build {} with filename {}", build_id, filename);
 
-    if (!data.empty() && kutils::create_dir(dir_name))
+    if (data.empty())
+    {
+      res.status = 400;
+      res.set_content(R"({"httpcode": 400, "error": "Bad request: data missing"})", "application/json");
+      return;
+    }
+
+    if (!kutils::create_dir(dir_name))
+    {
+      res.status = 400;
+      res.set_content(R"({"httpcode": 400, "error": "Unable to create directory"})", "application/json");
+      return;
+    }
+
+    try
     {
       kutils::SaveToFile(data, to_file_path(dir_name, filename));
       klog().t("File saved");
       res.status = 200;
       res.set_content(to_json_response(build_id, filename), "application/json");
-      return;
     }
-
-    res.status = 400;
-    res.set_content(R"({"httpcode": 400, "error": "Bad request: data missing"})", "application/json");
+    catch (const std::exception& e)
+    {
+      klog().e("Exception caught while saving log: {}", e.what());
+      res.status = 500;
+      res.set_content(R"({"httpcode": 500, "error": "Server error"})", "application/json");
+    }
   }
   //-------------------------------------------------------------------
   void handle_view(const httplib::Request& req, httplib::Response& res)
@@ -109,6 +122,7 @@ class server
            << "</body>"
            << "</html>";
 
+      res.status = 200;
       res.set_content(html.str(), "text/html");
     }
     catch (const std::exception& e)
